@@ -148,7 +148,7 @@ export const onrampInr = (payload) => {
 }
 
 export const mintTokens = (payload) => {
-    const { userId, stockSymbol, quantity} = req.body
+    const { userId, stockSymbol, quantity} = payload
     if(!INR_BALANCES[userId]){
         return {
             error : "User doesnt exist"
@@ -224,7 +224,7 @@ export const sellOrder = (payload) => {
     STOCK_BALANCES[userId][stockSymbol][stockType]["quantity"] -= quantity
     STOCK_BALANCES[userId][stockSymbol][stockType]["locked"] += quantity
 
-    checkOrderbook()
+    checkOrderbook(stockSymbol, stockType, price)
 
     ORDERBOOK[stockSymbol][stockType][price]["orders"][userId] += quantity
     ORDERBOOK[stockSymbol][stockType][price]["total"] += quantity

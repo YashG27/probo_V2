@@ -1,10 +1,12 @@
 import express from "express"
 import { WebSocketServer } from "ws"
 import { createClient } from "redis"
-import { connection } from "websocket";
 
 const subscriber = createClient();
 const app = express()
+app.get("/", (req, res) => {
+    res.send("Server is running")
+})
 const httpServer = app.listen(8080)
 
 let subscriptions = {
@@ -56,7 +58,9 @@ const handleSubscription = (ws, data) => {
 }
 
 const wss = new WebSocketServer( {server : httpServer})
+console.log(wss);
 wss.on('connection', async (ws) => {
+    ws.send("Connected succesfully");
     ws.on('error', console.error);
     ws.on('message', (message) => {
         const parsed = JSON.parse(message);

@@ -160,6 +160,11 @@ export const mintTokens = (payload) => {
             error : "Insufficient balance"
         }
     }
+    if(!STOCK_BALANCES[userId][stockSymbol]){
+        return {
+            error : "Stock does not exist"
+        }
+    }
     INR_BALANCES[userId]["balance"] -= quantity * 1000
     STOCK_BALANCES[userId][stockSymbol]["yes"]["quantity"] += quantity
     STOCK_BALANCES[userId][stockSymbol]["no"]["quantity"] += quantity
@@ -220,12 +225,12 @@ export const sellOrder = (payload) => {
             error : "Quantity should be > 0"
         }
     }
-
+    checkStockBalance(userId, stockSymbol, stockType);
     STOCK_BALANCES[userId][stockSymbol][stockType]["quantity"] -= quantity
     STOCK_BALANCES[userId][stockSymbol][stockType]["locked"] += quantity
 
     checkOrderbook(stockSymbol, stockType, price)
-
+    ORDERBOOK[stockSymbol][stockType][price]["orders"][userId] = 0;
     ORDERBOOK[stockSymbol][stockType][price]["orders"][userId] += quantity
     ORDERBOOK[stockSymbol][stockType][price]["total"] += quantity
 
@@ -239,8 +244,8 @@ export const buyOrder = (payload) => {
     const { userId, stockSymbol, quantity, stockType} = payload
     const oppType = stockType === 'yes' ? 'no' : 'yes';
     let {price} = payload;
-    price = price / 100;
-    const amount = quantity * price * 100;
+    price = parseInt(price) / 100;
+    const amount = parseInt(quantity) * price * 100;
     
     if( price < 0 || price > 10){
         return{
@@ -270,7 +275,7 @@ export const buyOrder = (payload) => {
 
     //Sort the price in ascending order
     const sortedPrice = Object.keys(ORDERBOOK[stockSymbol][stockType]).sort((a, b) => parseFloat(a) - parseFloat(b));
-    let remaining = quantity;
+    let remaining = parseInt(quantity);
     let fullyMatched = false;
     if (sortedPrice.length > 0 && price >= sortedPrice[0]){
         for ( const updatedPrice of sortedPrice){
@@ -283,7 +288,7 @@ export const buyOrder = (payload) => {
                     fullyMatched = true;
                     break;
                 }
-                const currentSeller = orders[seller]
+                const currentSeller = parseInt(orders[seller])
 
                 const valueToReduce = Math.min(currentSeller, remaining)
                 //Reduce the values from the orderbook
@@ -296,13 +301,16 @@ export const buyOrder = (payload) => {
                 STOCK_BALANCES[userId][stockSymbol][stockType]['quantity'] += valueToReduce
                 STOCK_BALANCES[seller][stockSymbol][stockType]['locked'] -= valueToReduce
 
+                
                 //Update the INR balances
                 INR_BALANCES[seller]['balance'] += valueToReduce * updatedPrice * 100 
                 INR_BALANCES[userId]['locked'] -= valueToReduce * updatedPrice * 100
                 
-
-                remaining -= valueToReduce
-                console.log("Remaining value", remaining)
+                console.log("Remaining value before reducing", remaining)
+                console.log(remaining)
+                console.log(valueToReduce)
+                remaining -= parseInt(valueToReduce)
+                console.log("Remaining value after reducing", remaining)
 
                 //Remove the user for qty 0 from orderbook
                 if(orders[seller] === 0){
@@ -315,7 +323,7 @@ export const buyOrder = (payload) => {
             }
             if(fullyMatched) break
         }
-        if (remaining > 0){
+        if (remaining > 0 && remaining < quantity){
             console.log("Remaining is",remaining)
             // Ensure stockSymbol, oppType, and oppPrice exist in the ORDERBOOK before accessing them
             checkOrderbook(stockSymbol, oppType, oppPrice)

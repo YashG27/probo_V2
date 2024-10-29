@@ -35,9 +35,13 @@ const handleSubscription = (ws, data) => {
         if(subscriptions[symbol]["connections"].length === 1){
             console.log("Subscribing on the pub sub to chanel", symbol)
             subscriber.subscribe(symbol, (message) => {
-                parsedMessage = JSON.parse(message);
-                for( const conn in subscriptions[symbol]["connections"]){
-                    conn.send(JSON.parse(message.orderbook))
+                console.log(message)
+                for( const conn of subscriptions[symbol]["connections"]){
+                    try{
+                        conn.send(message)
+                    }catch(e){
+                        console.log(e)
+                    }
                 }
             })
         }
@@ -58,7 +62,6 @@ const handleSubscription = (ws, data) => {
 }
 
 const wss = new WebSocketServer( {server : httpServer})
-console.log(wss);
 wss.on('connection', async (ws) => {
     ws.send("Connected succesfully");
     ws.on('error', console.error);

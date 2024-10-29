@@ -27,11 +27,11 @@ const handlePubSub = (uid, timeoutMs = 2000) => {
 const handleResponse = (res, payload) => {
   const { error, message, ...data} = JSON.parse(payload)
   if(error){
-    res.status(404).json({
+    return res.status(404).json({
       message : error
     })
   }
-  res.status(200).json({
+  return res.status(200).json({
     message : message || null,
     data
   })
@@ -49,13 +49,17 @@ const handleRequests = async(res, method, payload) => {
     const response = await handlePubSub(uid)
     handleResponse(res, response);
   }catch(e){
-    res.status(500).json({
-      message : e.message
+    return res.status(500).json({
+      error : e.message
     })
   }
 }
 
 //route to create a user
+app.get('/', (req, res) => {
+  res.status(200).send("Server is up and running");
+})
+
 app.post('/user/create/:userId', async (req, res) => {
   const userId = req.params.userId;
   const payload = {userId};
